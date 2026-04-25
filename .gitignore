@@ -1,0 +1,47 @@
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+test_*.png
+demo_*.png
+
+# Extracted packages (reference only)
+extracted_packages/
+
+# PDF papers and text extractions (reference only)
+*.pdf
+*.txt
+!README.md
+
+# R and Python package archives (reference only)
+*.tar.gz
+
+# Snapshots
+.snapshots/
+
+# Jupyter
+.ipynb_checkpoints/
