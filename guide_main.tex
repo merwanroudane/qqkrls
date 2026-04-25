@@ -1,0 +1,173 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ──
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable,listings}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{natbib}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+
+% ── Colors ──
+\definecolor{primaryblue}{HTML}{2563EB}
+\definecolor{deepblue}{HTML}{1E40AF}
+\definecolor{accentgreen}{HTML}{059669}
+\definecolor{warmamber}{HTML}{D97706}
+\definecolor{lightbg}{HTML}{F0F4FF}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{boxborder}{HTML}{BFDBFE}
+\definecolor{theorembg}{HTML}{EEF2FF}
+\definecolor{examplebg}{HTML}{ECFDF5}
+\definecolor{warningbg}{HTML}{FEF3C7}
+\definecolor{tipbg}{HTML}{F0FDF4}
+
+% ── Hyperref ──
+\hypersetup{
+  colorlinks=true, linkcolor=deepblue, citecolor=accentgreen,
+  urlcolor=primaryblue, bookmarks=true, bookmarksopen=true,
+  pdftitle={QQKRLS: A Complete Guide},
+  pdfauthor={Dr. Merwan Roudane},
+}
+
+% ── Headers ──
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{primaryblue}{\small\textsc{QQKRLS Technical Guide}}}
+\fancyhead[R]{\textcolor{primaryblue}{\small\thepage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{primaryblue}\leaders\hrule height \headrulewidth\hfill}}
+
+% ── Section Formatting ──
+\titleformat{\section}{\Large\bfseries\color{deepblue}}{{\color{primaryblue}\thesection}}{1em}{}[\vspace{-0.5em}\textcolor{primaryblue}{\rule{\textwidth}{0.8pt}}]
+\titleformat{\subsection}{\large\bfseries\color{deepblue!80!black}}{{\color{primaryblue}\thesubsection}}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{deepblue!60!black}}{{\color{primaryblue}\thesubsubsection}}{0.6em}{}
+
+% ── Tcolorbox styles ──
+\newtcolorbox{definitionbox}[1][]{enhanced,breakable,colback=theorembg,colframe=primaryblue,
+  title={\textbf{#1}},fonttitle=\bfseries\color{white},coltitle=white,
+  colbacktitle=primaryblue,boxrule=0.8pt,arc=4pt,left=8pt,right=8pt,top=6pt,bottom=6pt}
+
+\newtcolorbox{theorembox}[1][]{enhanced,breakable,colback=theorembg,colframe=deepblue,
+  title={\textbf{#1}},fonttitle=\bfseries\color{white},coltitle=white,
+  colbacktitle=deepblue,boxrule=0.8pt,arc=4pt,left=8pt,right=8pt,top=6pt,bottom=6pt}
+
+\newtcolorbox{examplebox}[1][]{enhanced,breakable,colback=examplebg,colframe=accentgreen,
+  title={\textbf{#1}},fonttitle=\bfseries\color{white},coltitle=white,
+  colbacktitle=accentgreen,boxrule=0.8pt,arc=4pt,left=8pt,right=8pt,top=6pt,bottom=6pt}
+
+\newtcolorbox{warningbox}[1][]{enhanced,breakable,colback=warningbg,colframe=warmamber,
+  title={\textbf{#1}},fonttitle=\bfseries\color{white},coltitle=white,
+  colbacktitle=warmamber,boxrule=0.8pt,arc=4pt,left=8pt,right=8pt,top=6pt,bottom=6pt}
+
+\newtcolorbox{tipbox}[1][]{enhanced,breakable,colback=tipbg,colframe=accentgreen!70!black,
+  title={\textbf{#1}},fonttitle=\bfseries\color{white},coltitle=white,
+  colbacktitle=accentgreen!70!black,boxrule=0.8pt,arc=4pt,left=8pt,right=8pt,top=6pt,bottom=6pt}
+
+% ── Code listing style ──
+\lstdefinestyle{pythonstyle}{
+  language=Python, basicstyle=\small\ttfamily,
+  backgroundcolor=\color{codebg}, frame=single, rulecolor=\color{boxborder},
+  keywordstyle=\bfseries\color{deepblue}, stringstyle=\color{accentgreen},
+  commentstyle=\itshape\color{gray}, showstringspaces=false,
+  breaklines=true, numbers=left, numberstyle=\tiny\color{gray},
+  xleftmargin=1.5em, framexleftmargin=1.5em, tabsize=4, captionpos=b,
+}
+\lstset{style=pythonstyle}
+
+% ── Theorems ──
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+% ── Commands ──
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Hk}{\mathcal{H}_K}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\bK}{\mathbf{K}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bV}{\mathbf{V}}
+\newcommand{\bLambda}{\boldsymbol{\Lambda}}
+
+\begin{document}
+
+% ── TITLE PAGE ──
+\begin{titlepage}
+\begin{center}
+\vspace*{2cm}
+{\Huge\bfseries\textcolor{deepblue}{QQKRLS}}\\[0.5cm]
+{\LARGE\textcolor{primaryblue}{Quantile-on-Quantile Kernel-Based\\[0.2cm] Regularized Least Squares}}\\[1.5cm]
+{\Large\textcolor{deepblue!70!black}{A Complete Technical Guide}}\\[0.3cm]
+{\large\textcolor{gray}{From Zero to Expert --- For Researchers \& Practitioners}}\\[3cm]
+
+\textcolor{primaryblue}{\rule{0.6\textwidth}{1.5pt}}\\[1cm]
+
+{\Large \textbf{Dr.\ Merwan Roudane}}\\[0.4cm]
+{\normalsize \texttt{merwanroudane920@gmail.com}}\\[0.3cm]
+{\small
+\textcolor{primaryblue}{\textbf{PyPI:}} \url{https://pypi.org/project/qqkrls/}\\
+\textcolor{accentgreen}{\textbf{GitHub:}} \url{https://github.com/merwanroudane/qqkrls}
+}\\[2cm]
+
+{\large Version 1.1.1}\\[0.5cm]
+{\normalsize \today}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ── Include all parts ──
+\input{guide_part1}
+\input{guide_part2}
+\input{guide_part3}
+
+% ── Bibliography ──
+\newpage
+\section{References}
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Hainmueller, J.\ \& Hazlett, C.} (2014). Kernel Regularized Least Squares: Moving Beyond Linearity and Additivity without Sacrificing Interpretability. \textit{Political Analysis}, 22(2), 143--168. \href{https://doi.org/10.1093/pan/mpt024}{doi:10.1093/pan/mpt024}
+
+\item \textbf{Sim, N.\ \& Zhou, H.} (2015). Oil Prices, US Stock Return, and the Dependence Between Their Quantiles. \textit{Journal of Banking \& Finance}, 55, 1--12. \href{https://doi.org/10.1016/j.jbankfin.2015.01.013}{doi:10.1016/j.jbankfin.2015.01.013}
+
+\item \textbf{Adebayo, T.S., Ozkan, O.\ \& Eweade, B.S.} (2024). Do energy efficiency R\&D investments and ICT promote environmental sustainability in Sweden? A novel QQKRLS investigation. \textit{Journal of Cleaner Production}, 440, 140832. \href{https://doi.org/10.1016/j.jclepro.2024.140832}{doi:10.1016/j.jclepro.2024.140832}
+
+\item \textbf{Adebayo, T.S., Meo, M.S., Eweade, B.S.\ \& Ozkan, O.} (2024). Analyzing the effects of solar energy innovations, digitalization, and economic globalization on environmental quality in the United States. \textit{Clean Technologies and Environmental Policy}, 26, 4157--4176. \href{https://doi.org/10.1007/s10098-024-02831-0}{doi:10.1007/s10098-024-02831-0}
+
+\item \textbf{Scholkopf, B.\ \& Smola, A.J.} (2002). \textit{Learning with Kernels: Support Vector Machines, Regularization, Optimization, and Beyond}. MIT Press.
+
+\item \textbf{Koenker, R.} (2005). \textit{Quantile Regression}. Cambridge University Press.
+
+\item \textbf{Tikhonov, A.N.} (1963). Solution of Incorrectly Formulated Problems and the Regularization Method. \textit{Soviet Mathematics Doklady}, 4, 1035--1038.
+\end{enumerate}
+
+\end{document}

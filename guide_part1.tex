@@ -1,0 +1,166 @@
+% ═══════════════════════════════════════════════════════════════════
+%  PART 1: Introduction & KRLS Theory
+% ═══════════════════════════════════════════════════════════════════
+
+\section{Introduction}
+
+\begin{tipbox}[Who Is This Guide For?]
+This guide is written for \textbf{researchers, graduate students, and practitioners} in economics, finance, and environmental science who want to apply advanced nonparametric methods without requiring deep machine-learning expertise. We start from basic regression concepts and build up to the full QQKRLS estimator.
+\end{tipbox}
+
+\subsection{Motivation: Why Go Beyond OLS?}
+
+Ordinary Least Squares (OLS) is the workhorse of empirical economics. Given a model $y = X\beta + \varepsilon$, OLS provides the best linear unbiased estimator (BLUE) under the Gauss--Markov assumptions. However, OLS imposes strong restrictions:
+
+\begin{enumerate}[label=\textcolor{primaryblue}{\arabic*.}]
+\item \textbf{Linearity}: The conditional expectation $\E[y \mid x]$ must be linear in $x$.
+\item \textbf{Additivity}: Each predictor's effect is separable --- no automatic interactions.
+\item \textbf{Homogeneity}: The effect $\beta_j$ is \emph{constant} across the entire distribution.
+\end{enumerate}
+
+In reality, economic relationships are often \textbf{nonlinear}, \textbf{interactive}, and \textbf{heterogeneous across the distribution}. For example, the effect of energy consumption on environmental quality may differ at low vs.\ high consumption levels.
+
+\begin{warningbox}[The Problem with Misspecification]
+If the true data-generating process is nonlinear but we fit a linear model, OLS estimates are \textbf{biased and inconsistent}. Diagnostic tests (Ramsey RESET, BDS) can detect this misspecification, but the solution requires a more flexible estimator.
+\end{warningbox}
+
+\subsection{The QQKRLS Framework}
+
+The \texttt{qqkrls} library provides a unified solution through four methods:
+
+\begin{center}
+\begin{tabular}{>{\bfseries\color{deepblue}}l p{10cm}}
+\toprule
+\textbf{Method} & \textbf{Description} \\
+\midrule
+KRLS & Kernel Regularized Least Squares --- nonparametric regression in a reproducing kernel Hilbert space \\
+QQ Regression & Quantile-on-Quantile analysis --- examines how effects vary across both distributions \\
+WQR & Weighted Quantile Regression --- kernel-weighted quantile estimates \\
+QQKRLS & The combined estimator --- nonparametric marginal effects across all quantile pairs \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+% ═══════════════════════════════════════════════════════════════════
+\section{Kernel Regularized Least Squares (KRLS)}
+% ═══════════════════════════════════════════════════════════════════
+
+\subsection{Intuition: From Linear to Nonparametric}
+
+Consider the classical regression problem: given data $\{(x_i, y_i)\}_{i=1}^N$ where $x_i \in \R^D$ and $y_i \in \R$, we want to estimate the conditional expectation function $f(x) = \E[y \mid x]$.
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{OLS}: Restricts $f(x) = x^\top \beta$ --- a linear function.
+\item \textbf{KRLS}: Allows $f$ to be \emph{any smooth function} in a reproducing kernel Hilbert space $\Hk$.
+\end{itemize}
+
+The key insight is the \textbf{kernel trick}: instead of explicitly specifying a functional form, KRLS defines similarity between observations using a \emph{kernel function} and learns a flexible, data-driven relationship.
+
+\subsection{The Gaussian Kernel}
+
+\begin{definitionbox}[Definition: Gaussian (RBF) Kernel]
+The Gaussian kernel measures the similarity between two observations $x_i$ and $x_j$:
+\begin{equation}
+K(x_i, x_j) = \exp\!\left(-\frac{\|x_i - x_j\|^2}{\sigma}\right)
+\label{eq:kernel}
+\end{equation}
+where $\sigma > 0$ is the \textbf{bandwidth} parameter controlling the smoothness of the function.
+\end{definitionbox}
+
+\textbf{Properties:}
+\begin{itemize}[leftmargin=2em]
+\item $K(x_i, x_i) = 1$ --- each observation is perfectly similar to itself.
+\item $K(x_i, x_j) \to 0$ as $\|x_i - x_j\| \to \infty$ --- distant observations have negligible influence.
+\item \textbf{Large $\sigma$}: Broader influence $\to$ smoother function (closer to linear).
+\item \textbf{Small $\sigma$}: Narrower influence $\to$ more flexible (risk of overfitting).
+\end{itemize}
+
+\begin{tipbox}[Default Bandwidth]
+Following Hainmueller \& Hazlett (2014), KRLS sets $\sigma = D$ (the number of predictors). This heuristic works well in practice and avoids expensive bandwidth search.
+\end{tipbox}
+
+\subsection{The KRLS Optimization Problem}
+
+\begin{theorembox}[KRLS Objective Function]
+KRLS solves the following Tikhonov-regularized optimization:
+\begin{equation}
+\hat{f} = \arg\min_{f \in \Hk} \underbrace{\sum_{i=1}^{N} (y_i - f(x_i))^2}_{\text{Data fidelity}} + \underbrace{\lambda \|f\|_{\Hk}^2}_{\text{Regularization}}
+\label{eq:krls_obj}
+\end{equation}
+where $\lambda > 0$ controls the trade-off between fitting the data and keeping the function smooth.
+\end{theorembox}
+
+\textbf{Interpretation:}
+\begin{itemize}[leftmargin=2em]
+\item The first term minimizes the sum of squared residuals (like OLS).
+\item The second term penalizes complexity in the RKHS norm, preventing overfitting.
+\item $\lambda \to 0$: Interpolates the data (overfitting).
+\item $\lambda \to \infty$: Converges to the sample mean (underfitting).
+\end{itemize}
+
+\subsection{The Representer Theorem and Closed-Form Solution}
+
+\begin{theorembox}[Representer Theorem (Scholkopf \& Smola, 2002)]
+The minimizer of Eq.~\eqref{eq:krls_obj} has the finite representation:
+\begin{equation}
+\hat{f}(x) = \sum_{i=1}^{N} c_i \cdot K(x, x_i)
+\label{eq:representer}
+\end{equation}
+where $\bc = (c_1, \ldots, c_N)^\top$ is a vector of $N$ coefficients.
+\end{theorembox}
+
+This is remarkable: although the RKHS is infinite-dimensional, the optimal solution only depends on $N$ parameters. The predicted value at any point $x$ is a \textbf{weighted sum of kernel similarities} to all training observations.
+
+\subsubsection{Eigendecomposition Solution}
+
+Substituting Eq.~\eqref{eq:representer} into Eq.~\eqref{eq:krls_obj} and taking the first-order condition:
+\begin{equation}
+\bc^* = (\bK + \lambda \bI)^{-1} \by
+\label{eq:coef_basic}
+\end{equation}
+where $\bK$ is the $N \times N$ kernel matrix with $K_{ij} = K(x_i, x_j)$.
+
+For numerical stability, KRLS uses the eigendecomposition $\bK = \bV \bLambda \bV^\top$:
+\begin{equation}
+\boxed{\bc^* = \bV (\bLambda + \lambda \bI)^{-1} \bV^\top \by}
+\label{eq:coef_eigen}
+\end{equation}
+
+\begin{examplebox}[Computational Advantage]
+The eigendecomposition is computed \textbf{once} and reused for different values of $\lambda$, making leave-one-out cross-validation extremely efficient.
+\end{examplebox}
+
+\subsection{Regularization Parameter Selection via LOO-CV}
+
+\begin{definitionbox}[Leave-One-Out Cross-Validation]
+The LOO-CV error is:
+\begin{equation}
+\text{LOO}(\lambda) = \sum_{i=1}^{N} \left(\frac{y_i - \hat{f}_\lambda(x_i)}{1 - H_{ii}(\lambda)}\right)^2
+\end{equation}
+where $H_{ii}(\lambda)$ is the $i$-th diagonal of the hat matrix $\bH = \bK(\bK + \lambda \bI)^{-1}$.
+\end{definitionbox}
+
+KRLS selects $\lambda^*$ by minimizing this LOO error, which can be computed \textbf{without actually refitting} the model $N$ times (using the eigendecomposition).
+
+\subsection{Pointwise Marginal Effects}
+
+Unlike OLS (which gives one constant coefficient per variable), KRLS provides a \textbf{marginal effect for each observation}. This is computed analytically:
+
+\begin{theorembox}[KRLS Pointwise Marginal Effect]
+The marginal effect of predictor $d$ at observation $j$ is:
+\begin{equation}
+\frac{\partial \hat{f}(x_j)}{\partial x_j^{(d)}} = \frac{-2}{\sigma} \sum_{i=1}^{N} c_i \cdot K(x_j, x_i) \cdot \left(x_i^{(d)} - x_j^{(d)}\right)
+\label{eq:deriv}
+\end{equation}
+\end{theorembox}
+
+\textbf{Key insight}: The marginal effect varies by observation. If these pointwise effects show substantial variation (different at Q25 vs.\ Q75), the relationship is genuinely nonlinear, justifying KRLS over OLS.
+
+\begin{examplebox}[Interpreting Marginal Effects]
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{Average Marginal Effect}: $\overline{\text{ME}}_d = \frac{1}{N}\sum_{j=1}^{N} \frac{\partial \hat{f}}{\partial x_j^{(d)}}$ --- comparable to OLS $\hat{\beta}_d$.
+\item \textbf{Heterogeneity}: If Q25 $\neq$ Q75 of the effects, the relationship is nonlinear.
+\item \textbf{Plots}: Scatter plots of marginal effects vs.\ predictor values reveal the functional form.
+\end{itemize}
+\end{examplebox}

@@ -1,0 +1,213 @@
+% ═══════════════════════════════════════════════════════════════════
+%  PART 3: Diagnostics, Python Usage & Interpretation
+% ═══════════════════════════════════════════════════════════════════
+
+\section{Pre-Estimation Diagnostic Tests}
+
+Before applying KRLS/QQKRLS, researchers must \textbf{justify} the use of nonparametric methods. The \texttt{qqkrls} library includes a complete diagnostic battery.
+
+\subsection{Ramsey RESET Test}
+
+\begin{definitionbox}[Ramsey RESET (Regression Equation Specification Error Test)]
+Tests whether the linear model is correctly specified by including powers of fitted values:
+\begin{equation}
+y = X\beta + \gamma_2 \hat{y}^2 + \gamma_3 \hat{y}^3 + \varepsilon
+\end{equation}
+\begin{itemize}[leftmargin=1.5em]
+\item $H_0$: Linear model is correctly specified ($\gamma_2 = \gamma_3 = 0$)
+\item $H_1$: Nonlinear terms are significant $\to$ \textbf{use KRLS}
+\end{itemize}
+\end{definitionbox}
+
+\subsection{Breusch--Pagan Test}
+
+\begin{definitionbox}[Breusch--Pagan Test for Heteroskedasticity]
+Tests whether the variance of residuals depends on the predictors:
+\begin{equation}
+\hat{\varepsilon}^2 = X\alpha + u
+\end{equation}
+\begin{itemize}[leftmargin=1.5em]
+\item $H_0$: Homoskedasticity ($\Var[\varepsilon \mid X] = \sigma^2$)
+\item $H_1$: Heteroskedasticity $\to$ \textbf{effects differ across distribution} $\to$ use quantile-based analysis
+\end{itemize}
+\end{definitionbox}
+
+\subsection{BDS Test}
+
+\begin{definitionbox}[BDS Test (Brock, Dechert, Scheinkman)]
+A nonparametric test for serial independence and nonlinear structure in the residuals:
+\begin{itemize}[leftmargin=1.5em]
+\item $H_0$: Residuals are i.i.d.
+\item $H_1$: Nonlinear dependence exists $\to$ \textbf{justifies KRLS/QQKRLS}
+\end{itemize}
+The test uses the correlation integral at embedding dimension $m$:
+\begin{equation}
+C_m(\epsilon) = \lim_{N \to \infty} \frac{2}{N(N-1)} \sum_{i<j} \mathbf{1}\!\left[\|x_i^m - x_j^m\| < \epsilon\right]
+\end{equation}
+Under the null, $C_m(\epsilon) = [C_1(\epsilon)]^m$. The BDS statistic tests this equality.
+\end{definitionbox}
+
+\subsection{Jarque--Bera Normality Test}
+
+\begin{definitionbox}[Jarque--Bera Test]
+Tests whether the data follows a normal distribution:
+\begin{equation}
+JB = \frac{N}{6}\left(S^2 + \frac{(K-3)^2}{4}\right) \sim \chi^2(2)
+\end{equation}
+where $S$ = skewness, $K$ = kurtosis. Rejection suggests \textbf{non-Gaussian distributions}, motivating quantile-based methods.
+\end{definitionbox}
+
+\subsection{Andrews Parameter Stability Test}
+
+\begin{definitionbox}[Andrews Sup-F Test]
+Tests for structural breaks in the relationship by computing $F$-statistics at all possible break points:
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{Max-F}: Supreme of $F$-statistics (detects single break)
+\item \textbf{Exp-F}: Exponential average (robust to multiple breaks)
+\item \textbf{Ave-F}: Simple average (overall instability)
+\end{itemize}
+Parameter instability justifies quantile-based methods that allow coefficients to vary.
+\end{definitionbox}
+
+
+\section{Using the \texttt{qqkrls} Python Library}
+
+\subsection{Installation}
+
+\begin{lstlisting}[language=bash,style=pythonstyle]
+pip install qqkrls
+\end{lstlisting}
+
+\subsection{Complete Workflow}
+
+\begin{lstlisting}
+import numpy as np
+import pandas as pd
+from qqkrls import (
+    krls, qqkrls, predict_krls,
+    plot_qqkrls_heatmap, plot_qqkrls_3d,
+    plot_qqkrls_contour, plot_qqkrls_pvalue,
+    plot_krls_derivatives, plot_krls_fit,
+    descriptive_statistics, linearity_test_battery,
+    bds_test, jarque_bera, print_diagnostics,
+)
+
+# Step 1: Load data
+y = df['EF'].values
+X = df[['Energy', 'CO2', 'GDP']].values
+
+# Step 2: Pre-estimation diagnostics
+diag = linearity_test_battery(y, X, col_names=['Energy','CO2','GDP'])
+print_diagnostics(diag)
+
+# Step 3: Fit KRLS
+fit = krls(X, y, derivative=True, vcov=True, verbose=1)
+
+# Step 4: QQKRLS estimation
+taus = np.arange(0.05, 1.0, 0.05)
+result = qqkrls(y=y, x=df['Energy'].values,
+                y_quantiles=taus, x_quantiles=taus,
+                n_boot=200, verbose=True)
+
+# Step 5: Visualize
+plot_qqkrls_heatmap(result, colorscale='paper',
+                    show_stars=True, save_path='heatmap.png')
+plot_qqkrls_3d(result, save_path='surface.png')
+\end{lstlisting}
+
+\subsection{Key API Functions}
+
+\begin{center}
+\small
+\begin{tabular}{>{\ttfamily\color{deepblue}}l p{8cm}}
+\toprule
+\textbf{Function} & \textbf{Description} \\
+\midrule
+krls(X, y) & Fit KRLS model with LOO cross-validation \\
+qqkrls(y, x) & Run QQKRLS with bootstrap inference \\
+predict\_krls(fit, X\_new) & Out-of-sample prediction \\
+\midrule
+plot\_qqkrls\_heatmap() & Paper-style coefficient heatmap \\
+plot\_qqkrls\_3d() & MATLAB-style 3D surface plot \\
+plot\_qqkrls\_contour() & Filled contour plot \\
+plot\_qqkrls\_pvalue() & P-value significance map \\
+plot\_qqkrls\_panel() & Multi-variable panel \\
+plot\_krls\_derivatives() & Marginal effect scatter + density \\
+plot\_krls\_fit() & Fitted vs actual with $R^2$ \\
+\midrule
+descriptive\_statistics() & LaTeX descriptive statistics table \\
+qqkrls\_coefficient\_table() & LaTeX coefficient matrix \\
+krls\_summary\_table() & LaTeX KRLS summary \\
+export\_results\_csv() & CSV export of all results \\
+\midrule
+linearity\_test\_battery() & RESET + BP + JB + BDS \\
+bds\_test() & BDS independence test \\
+parameter\_stability\_test() & Andrews sup-F, exp-F, ave-F \\
+jarque\_bera() & Jarque--Bera normality test \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+\section{Interpreting QQKRLS Results}
+
+\subsection{Reading the Heatmap}
+
+The QQKRLS heatmap is the primary output. Each cell $(\theta, \tau)$ represents one nonparametric marginal effect:
+
+\begin{warningbox}[Common Misinterpretations to Avoid]
+\begin{itemize}[leftmargin=1.5em]
+\item The axes are \textbf{quantiles}, not raw values of the variables.
+\item $\theta = 0.05$ means ``when $X$ is at its 5th percentile,'' not ``when $X = 0.05$.''
+\item A positive coefficient means: at that distributional location, increasing $X$ \emph{increases} $Y$.
+\end{itemize}
+\end{warningbox}
+
+\subsection{Pattern Recognition}
+
+\begin{center}
+\begin{tabular}{>{\bfseries\color{deepblue}}l p{9cm}}
+\toprule
+\textbf{Pattern} & \textbf{Economic Interpretation} \\
+\midrule
+Uniform positive & $X$ always increases $Y$ (homogeneous positive effect) \\
+Gradient left-to-right & Effect strengthens as $X$ increases (nonlinear amplification) \\
+Gradient bottom-to-top & Effect stronger when $Y$ is high (asymmetric vulnerability) \\
+Diagonal pattern & Effect strongest at matching quantiles (distributional symmetry) \\
+Quadrant split & Effect changes sign across the distribution (regime switching) \\
+Significance clusters & Only certain quantile pairs show significant effects \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Writing Up Results for a Paper}
+
+\begin{examplebox}[Template for Results Section]
+``Table X presents the QQKRLS estimates of the marginal effect of [Variable] on [Dependent Variable] across 19 quantile pairs ($\theta, \tau \in \{0.05, 0.10, \ldots, 0.95\}$). The pre-estimation diagnostics (Ramsey RESET: $F = \ldots$, $p = \ldots$; BDS: $z = \ldots$, $p < 0.01$) reject linearity and i.i.d.\ residuals, justifying the nonparametric QQKRLS approach.
+
+The heatmap in Figure Y reveals substantial heterogeneity across the distribution. At lower quantiles of [Variable] ($\theta < 0.30$), the effect on [DV] is [negative/insignificant], while at upper quantiles ($\theta > 0.70$), the effect becomes [significantly positive]. This asymmetry suggests that [economic interpretation].
+
+Of the 361 quantile-pair cells, [N] ([\%]\%) are significant at the 5\% level, concentrated in the [describe region] of the heatmap. These findings are robust to the bootstrap inference with $B = 200$ replications.''
+\end{examplebox}
+
+\subsection{Methodological Justification Workflow}
+
+The recommended workflow for any QQKRLS paper follows five steps:
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.2cm,
+  box/.style={rectangle, rounded corners=6pt, draw=primaryblue, fill=primaryblue!8, text width=9cm, minimum height=1.2cm, align=center, font=\small},
+  arrow/.style={-{Stealth[length=6pt]}, thick, primaryblue}
+]
+\node[box] (s1) {\textbf{Step 1:} Run diagnostics (RESET, BP, BDS, JB) $\to$ Reject linearity};
+\node[box, below=of s1] (s2) {\textbf{Step 2:} Fit KRLS $\to$ Confirm high $R^2$, check residuals};
+\node[box, below=of s2] (s3) {\textbf{Step 3:} Examine ME heterogeneity (Q25 $\neq$ Q75) $\to$ Justify quantile approach};
+\node[box, below=of s3] (s4) {\textbf{Step 4:} Run QQKRLS with bootstrap $\to$ Coefficient matrix $\beta(\theta, \tau)$};
+\node[box, below=of s4] (s5) {\textbf{Step 5:} Visualize (heatmap, 3D, contour) $\to$ Interpret patterns};
+\draw[arrow] (s1) -- (s2);
+\draw[arrow] (s2) -- (s3);
+\draw[arrow] (s3) -- (s4);
+\draw[arrow] (s4) -- (s5);
+\end{tikzpicture}
+\end{center}

@@ -1,0 +1,160 @@
+% ═══════════════════════════════════════════════════════════════════
+%  PART 2: QQ Regression & QQKRLS Theory
+% ═══════════════════════════════════════════════════════════════════
+
+\section{Quantile-on-Quantile (QQ) Regression}
+
+\subsection{Motivation: Beyond the Mean}
+
+Standard regression estimates the \textbf{conditional mean} $\E[y \mid x]$. But economic relationships often differ across the distribution:
+
+\begin{itemize}[leftmargin=2em]
+\item Does energy consumption affect environmental quality \emph{differently} when the footprint is already high vs.\ low?
+\item Is the GDP--pollution nexus stronger during economic booms (high GDP quantiles) or recessions (low GDP quantiles)?
+\end{itemize}
+
+\textbf{Quantile regression} (Koenker, 2005) addresses the first question by estimating conditional quantiles $Q_\tau(y \mid x)$ for different $\tau \in (0,1)$. But it still assumes a \emph{fixed} effect of $x$ regardless of where $x$ falls in its own distribution.
+
+\begin{definitionbox}[Quantile-on-Quantile Regression (Sim \& Zhou, 2015)]
+QQ regression creates a \textbf{two-dimensional mapping} $\beta(\theta, \tau)$ that captures how the $\theta$-th quantile of $X$ affects the $\tau$-th conditional quantile of $Y$. This reveals distributional heterogeneity in \emph{both} variables simultaneously.
+\end{definitionbox}
+
+\subsection{The QQ Regression Procedure}
+
+\begin{algorithm}[H]
+\caption{Quantile-on-Quantile Regression}
+\begin{algorithmic}[1]
+\Require Data $\{(x_i, y_i)\}_{i=1}^N$, quantile grids $\Theta = \{\theta_1, \ldots, \theta_J\}$ and $\mathcal{T} = \{\tau_1, \ldots, \tau_K\}$
+\Ensure Coefficient matrix $\beta(\theta, \tau)$ of dimension $K \times J$
+\For{each $\theta \in \Theta$}
+    \State Compute threshold: $q_\theta = Q_X(\theta)$ \Comment{$\theta$-th quantile of $X$}
+    \State Subset: $\mathcal{S}_\theta = \{(x_i, y_i) : x_i \leq q_\theta\}$
+    \For{each $\tau \in \mathcal{T}$}
+        \State Estimate $\tau$-th quantile regression of $Y$ on $X$ using $\mathcal{S}_\theta$
+        \State Store $\hat{\beta}(\theta, \tau)$
+    \EndFor
+\EndFor
+\State \Return Matrix $[\hat{\beta}(\theta_j, \tau_k)]_{k,j}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Interpreting the QQ Coefficient Matrix}
+
+The result is a $K \times J$ matrix where:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Rows} ($\tau$): Quantiles of $Y$ (the dependent variable)
+\item \textbf{Columns} ($\theta$): Quantiles of $X$ (the independent variable)
+\item \textbf{Cell $\beta(\theta, \tau)$}: The marginal effect of $X$ on $Y$ at that specific distributional location
+\end{itemize}
+
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+  \draw[thick,-{Stealth}] (0,0) -- (8,0) node[right] {$\theta$ (X quantiles)};
+  \draw[thick,-{Stealth}] (0,0) -- (0,6) node[above] {$\tau$ (Y quantiles)};
+  \fill[primaryblue!10] (0.5,0.5) rectangle (7.5,5.5);
+  \draw[primaryblue,thick] (0.5,0.5) rectangle (7.5,5.5);
+  \node at (4,3) {\Large $\beta(\theta, \tau)$};
+  \node[below] at (1.5,0.3) {\small 0.05};
+  \node[below] at (4,0.3) {\small 0.50};
+  \node[below] at (6.5,0.3) {\small 0.95};
+  \node[left] at (0.3,1) {\small 0.05};
+  \node[left] at (0.3,3) {\small 0.50};
+  \node[left] at (0.3,5) {\small 0.95};
+  \node[right,text width=5cm,font=\small] at (8.2,4.5) {\textcolor{accentgreen}{\textbf{Green}}: Positive effect};
+  \node[right,text width=5cm,font=\small] at (8.2,3.5) {\textbf{White}: Near-zero effect};
+  \node[right,text width=5cm,font=\small] at (8.2,2.5) {\textcolor{red}{\textbf{Red}}: Negative effect};
+\end{tikzpicture}
+\end{center}
+
+% ═══════════════════════════════════════════════════════════════════
+\section{The QQKRLS Estimator}
+% ═══════════════════════════════════════════════════════════════════
+
+\subsection{Combining KRLS with QQ Regression}
+
+QQKRLS (Adebayo et al., 2024) replaces the linear quantile regression step in QQ with \textbf{KRLS}, creating a fully nonparametric estimator:
+
+\begin{theorembox}[The QQKRLS Algorithm]
+For each X-quantile $\theta$ and Y-quantile $\tau$:
+\begin{enumerate}[label=\textcolor{white}{\arabic*.}]
+\item \textbf{Subset}: Select observations where $x_i \leq Q_X(\theta)$
+\item \textbf{Fit KRLS}: Apply kernel regression on the subset $\to$ obtain pointwise marginal effects $\left\{\frac{\partial \hat{f}_{[\theta]}}{\partial x}\right\}$
+\item \textbf{Extract quantile}: The coefficient is the $\tau$-th quantile of the marginal effects:
+\begin{equation}
+\boxed{\beta(\theta, \tau) = Q_\tau\!\left(\left\{\frac{\partial \hat{f}_{[\theta]}(x_j)}{\partial x}\right\}_{j \in \mathcal{S}_\theta}\right)}
+\end{equation}
+\end{enumerate}
+\end{theorembox}
+
+\subsection{Detailed QQKRLS Algorithm}
+
+\begin{algorithm}[H]
+\caption{QQKRLS Estimation with Bootstrap Inference}
+\begin{algorithmic}[1]
+\Require $\by, \bx$, quantile grids $\Theta, \mathcal{T}$, bootstrap replications $B$, min.\ obs.\ $n_{\min}$
+\Ensure $\hat{\beta}(\theta,\tau)$, $\text{SE}(\theta,\tau)$, $t(\theta,\tau)$, $p(\theta,\tau)$
+\For{each $\theta \in \Theta$}
+    \State $q_\theta \gets Q_X(\theta)$; \quad $\mathcal{S}_\theta \gets \{i : x_i \leq q_\theta\}$
+    \If{$|\mathcal{S}_\theta| \geq n_{\min}$}
+        \State Fit KRLS on $(x_{\mathcal{S}_\theta}, y_{\mathcal{S}_\theta})$ with derivative=True
+        \State Extract pointwise marginal effects $\{d_j\}_{j \in \mathcal{S}_\theta}$
+        \For{each $\tau \in \mathcal{T}$}
+            \State $\hat{\beta}(\theta,\tau) \gets Q_\tau(\{d_j\})$ \Comment{$\tau$-th quantile of effects}
+            \For{$b = 1, \ldots, B$} \Comment{Bootstrap for SE}
+                \State Draw bootstrap sample with replacement from $\mathcal{S}_\theta$
+                \State Fit KRLS on bootstrap sample
+                \State $\hat{\beta}^{(b)}(\theta,\tau) \gets Q_\tau$ of bootstrap marginal effects
+            \EndFor
+            \State $\widehat{\text{SE}} \gets \text{std}(\hat{\beta}^{(1)}, \ldots, \hat{\beta}^{(B)})$
+            \State $t \gets \hat{\beta} / \widehat{\text{SE}}$; \quad $p \gets 2\Phi(-|t|)$
+        \EndFor
+    \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Why QQKRLS Improves Over Standard QQ}
+
+\begin{center}
+\begin{tabular}{>{\bfseries\color{deepblue}}l p{5.5cm} p{5.5cm}}
+\toprule
+& \textbf{Standard QQ} & \textbf{QQKRLS} \\
+\midrule
+Inner estimator & Linear quantile regression & KRLS (nonparametric) \\
+Functional form & Assumes linearity within subsets & No functional form assumption \\
+Interactions & Not captured & Automatic via Gaussian kernel \\
+Marginal effects & Constant within each subset & Pointwise (varies by obs.) \\
+Inference & Asymptotic & Bootstrap (finite-sample valid) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Statistical Inference}
+
+\subsubsection{Bootstrap Standard Errors}
+
+For each cell $(\theta, \tau)$, QQKRLS uses the \textbf{paired bootstrap}:
+\begin{enumerate}[leftmargin=2em]
+\item Draw $B$ bootstrap samples (with replacement) from the subset $\mathcal{S}_\theta$
+\item Re-estimate KRLS and extract the $\tau$-th quantile of marginal effects
+\item The bootstrap standard error: $\widehat{\text{SE}}(\theta,\tau) = \text{std}\{\hat{\beta}^{(1)}, \ldots, \hat{\beta}^{(B)}\}$
+\end{enumerate}
+
+\subsubsection{Test Statistics and P-values}
+
+Under the null $H_0: \beta(\theta,\tau) = 0$:
+\begin{equation}
+t(\theta,\tau) = \frac{\hat{\beta}(\theta,\tau)}{\widehat{\text{SE}}(\theta,\tau)} \xrightarrow{d} \mathcal{N}(0,1)
+\end{equation}
+\begin{equation}
+p(\theta,\tau) = 2\Phi\!\left(-|t(\theta,\tau)|\right)
+\end{equation}
+
+\begin{tipbox}[Significance Conventions]
+\begin{itemize}[leftmargin=1.5em]
+\item $^{***}$: $p < 0.01$ (highly significant)
+\item $^{**}$: $p < 0.05$ (significant at 5\%)
+\item $^{*}$: $p < 0.10$ (marginally significant)
+\end{itemize}
+These stars are displayed on the heatmap to show which cells have statistically significant effects.
+\end{tipbox}
