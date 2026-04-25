@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qqkrls"
-version = "1.0.0"
+version = "1.1.1"
 description = "Quantile-on-Quantile Kernel-Based Regularized Least Squares — A Python implementation of KRLS (Hainmueller & Hazlett, 2014) and QQKRLS (Adebayo et al., 2024) with publication-quality MATLAB-style visualizations."
 readme = "README.md"
 license = "MIT"

@@ -294,9 +294,13 @@ def plot_qqkrls_3d(result, title: str = "QQKRLS Surface",
     _journal_style()
     cmap = CMAP_REGISTRY.get(colorscale.lower(), _JET)
 
-    mat = result.to_matrix("coefficient")
-    y_q = sorted(result.results["y_quantile"].dropna().unique())
-    x_q = sorted(result.results["x_quantile"].dropna().unique())
+    # Build meshgrid from pivot axes to guarantee dimension match
+    mat_df = result.results.dropna(subset=["coefficient"]).pivot(
+        index="y_quantile", columns="x_quantile", values="coefficient"
+    )
+    mat = mat_df.values
+    y_q = list(mat_df.index)
+    x_q = list(mat_df.columns)
 
     X_mesh, Y_mesh = np.meshgrid(x_q, y_q)
 
@@ -338,9 +342,13 @@ def plot_qqkrls_contour(result, title: str = "QQKRLS Contour",
     _journal_style()
     cmap = CMAP_REGISTRY.get(colorscale.lower(), _JET)
 
-    mat = result.to_matrix("coefficient")
-    y_q = sorted(result.results["y_quantile"].dropna().unique())
-    x_q = sorted(result.results["x_quantile"].dropna().unique())
+    # Build meshgrid from pivot axes to guarantee dimension match
+    mat_df = result.results.dropna(subset=["coefficient"]).pivot(
+        index="y_quantile", columns="x_quantile", values="coefficient"
+    )
+    mat = mat_df.values
+    y_q = list(mat_df.index)
+    x_q = list(mat_df.columns)
     X_mesh, Y_mesh = np.meshgrid(x_q, y_q)
 
     fig, ax = plt.subplots(figsize=figsize)

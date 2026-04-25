@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QQKRLS — Quantile-on-Quantile Kernel-Based Regularized Least Squares</title>
+  <meta name="description" content="QQKRLS: A Python library for Quantile-on-Quantile Kernel-Based Regularized Least Squares with publication-quality visualizations for econometric research.">
+  <meta name="keywords" content="QQKRLS, KRLS, quantile regression, kernel regression, econometrics, Python, nonparametric, marginal effects">
+  <meta name="author" content="Dr. Merwan Roudane">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+
+:root {
+  --primary: #2563eb; --primary-light: #dbeafe; --primary-dark: #1d4ed8;
+  --accent: #059669; --accent-light: #d1fae5;
+  --warm: #f59e0b; --warm-light: #fef3c7;
+  --bg: #fafbfe; --card: #ffffff; --text: #1e293b; --text-light: #64748b;
+  --border: #e2e8f0; --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --radius: 16px; --font: 'Inter', system-ui, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; }
+
+/* NAV */
+.navbar {
+  position: fixed; top:0; width:100%; z-index:100;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border); padding: 0 2rem;
+}
+.nav-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:64px; }
+.nav-logo { font-size:1.4rem; font-weight:800; color:var(--primary); text-decoration:none; letter-spacing:-0.5px; }
+.nav-logo span { color: var(--accent); }
+.nav-links { display:flex; gap:1.5rem; list-style:none; }
+.nav-links a { text-decoration:none; color:var(--text-light); font-size:0.9rem; font-weight:500; transition:color 0.2s; }
+.nav-links a:hover { color:var(--primary); }
+.nav-badge {
+  display:inline-block; background:var(--primary); color:#fff;
+  padding:6px 16px; border-radius:20px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:transform 0.2s;
+}
+.nav-badge:hover { transform:translateY(-2px); background:var(--primary-dark); }
+
+/* HERO */
+.hero {
+  margin-top:64px; padding:5rem 2rem 4rem;
+  background: linear-gradient(135deg, #eef2ff 0%, #dbeafe 30%, #d1fae5 70%, #fef3c7 100%);
+  text-align:center; position:relative; overflow:hidden;
+}
+.hero::before {
+  content:''; position:absolute; top:-50%; right:-20%; width:600px; height:600px;
+  background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%); border-radius:50%;
+}
+.hero h1 { font-size:3rem; font-weight:900; letter-spacing:-1px; color:var(--text);
+  background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.hero .subtitle { font-size:1.25rem; color:var(--text-light); max-width:700px; margin:1rem auto 2rem; }
+.hero-badges { display:flex; gap:0.8rem; justify-content:center; flex-wrap:wrap; }
+.badge {
+  display:inline-flex; align-items:center; gap:6px; padding:8px 18px;
+  border-radius:12px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.3s;
+}
+.badge-blue { background:var(--primary-light); color:var(--primary); border:1px solid rgba(37,99,235,0.2); }
+.badge-green { background:var(--accent-light); color:var(--accent); border:1px solid rgba(5,150,105,0.2); }
+.badge-amber { background:var(--warm-light); color:#92400e; border:1px solid rgba(245,158,11,0.2); }
+.badge:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+
+/* SECTION */
+.section { max-width:1200px; margin:0 auto; padding:4rem 2rem; }
+.section-title {
+  font-size:2rem; font-weight:800; margin-bottom:0.5rem; letter-spacing:-0.5px;
+  display:flex; align-items:center; gap:12px;
+}
+.section-title .icon { font-size:1.6rem; }
+.section-desc { color:var(--text-light); margin-bottom:2rem; font-size:1.05rem; }
+.divider { height:1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin:0 auto; max-width:800px; }
+
+/* CARDS */
+.card {
+  background:var(--card); border-radius:var(--radius); border:1px solid var(--border);
+  box-shadow:var(--shadow); overflow:hidden; transition:all 0.3s;
+}
+.card:hover { transform:translateY(-4px); box-shadow:0 8px 32px rgba(0,0,0,0.1); }
+.card-header {
+  padding:1rem 1.5rem; font-weight:700; font-size:1.05rem;
+  background:linear-gradient(135deg, #f8fafc, #f1f5f9); border-bottom:1px solid var(--border);
+}
+.card-body { padding:1.5rem; }
+
+/* GRID */
+.grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(500px,1fr)); gap:2rem; }
+.grid-3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(350px,1fr)); gap:2rem; }
+
+/* IMAGES */
+.img-frame {
+  background:var(--card); border-radius:var(--radius); border:1px solid var(--border);
+  box-shadow:var(--shadow); overflow:hidden; transition:all 0.3s;
+}
+.img-frame:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,0.12); }
+.img-frame img { width:100%; display:block; }
+.img-caption {
+  padding:12px 16px; font-size:0.9rem; font-weight:600; color:var(--text-light);
+  background:linear-gradient(135deg, #f8fafc, #f1f5f9); border-top:1px solid var(--border); text-align:center;
+}
+
+/* TABLES */
+.table-wrap { overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); }
+table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+thead { background:linear-gradient(135deg, var(--primary), var(--primary-dark)); color:#fff; }
+th { padding:12px 14px; text-align:left; font-weight:600; white-space:nowrap; }
+td { padding:10px 14px; border-bottom:1px solid var(--border); }
+tbody tr:hover { background:#f1f5f9; }
+tbody tr:nth-child(even) { background:#f8fafc; }
+.sig { color:var(--accent); font-weight:700; }
+
+/* CODE */
+.code-block {
+  background:#1e293b; color:#e2e8f0; padding:1.5rem; border-radius:var(--radius);
+  overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:0.85rem; line-height:1.6;
+  box-shadow:var(--shadow); position:relative;
+}
+.code-block .comment { color:#94a3b8; }
+.code-block .keyword { color:#93c5fd; }
+.code-block .string { color:#86efac; }
+.code-block .func { color:#fbbf24; }
+
+/* OUTPUT */
+.output-block {
+  background:#f8fafc; border:1px solid var(--border); border-radius:12px;
+  padding:1.2rem; font-family:'JetBrains Mono',monospace; font-size:0.8rem;
+  line-height:1.5; overflow-x:auto; white-space:pre-wrap; color:#334155;
+}
+
+/* FEATURE CARDS */
+.feature-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.5rem; }
+.feature-card {
+  background:var(--card); border-radius:var(--radius); padding:1.8rem;
+  border:1px solid var(--border); box-shadow:var(--shadow); transition:all 0.3s; text-align:center;
+}
+.feature-card:hover { transform:translateY(-6px); box-shadow:0 12px 40px rgba(0,0,0,0.1); }
+.feature-icon { font-size:2.5rem; margin-bottom:1rem; }
+.feature-card h3 { font-size:1.1rem; margin-bottom:0.5rem; }
+.feature-card p { font-size:0.9rem; color:var(--text-light); }
+
+/* FOOTER */
+.footer {
+  background:linear-gradient(135deg, #1e293b, #0f172a); color:#94a3b8;
+  padding:3rem 2rem; text-align:center; margin-top:2rem;
+}
+.footer a { color:#93c5fd; text-decoration:none; }
+.footer a:hover { color:#bfdbfe; }
+.footer h3 { color:#f1f5f9; margin-bottom:0.5rem; }
+.footer-grid { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; text-align:center; }
+
+/* DEVELOPER */
+.dev-card {
+  background: linear-gradient(135deg, #eef2ff, #dbeafe);
+  border-radius:var(--radius); padding:2.5rem; display:flex; align-items:center; gap:2rem;
+  border:1px solid rgba(37,99,235,0.15); box-shadow:var(--shadow);
+}
+.dev-avatar {
+  width:100px; height:100px; border-radius:50%;
+  background:linear-gradient(135deg, var(--primary), var(--accent));
+  display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:#fff; flex-shrink:0;
+}
+.dev-info h3 { font-size:1.3rem; color:var(--text); }
+.dev-info p { color:var(--text-light); font-size:0.95rem; }
+.dev-links { display:flex; gap:0.8rem; margin-top:0.8rem; flex-wrap:wrap; }
+.dev-links a { font-size:0.85rem; }
+
+/* INSTALL */
+.install-box {
+  background:linear-gradient(135deg, #059669, #047857); color:#fff;
+  border-radius:var(--radius); padding:2rem; text-align:center; box-shadow:var(--shadow);
+}
+.install-box code { background:rgba(0,0,0,0.3); padding:8px 24px; border-radius:8px; font-size:1.1rem; display:inline-block; margin-top:1rem; }
+
+/* SCROLL TOP */
+.scroll-top {
+  position:fixed; bottom:2rem; right:2rem; width:48px; height:48px;
+  background:var(--primary); color:#fff; border:none; border-radius:50%;
+  font-size:1.2rem; cursor:pointer; box-shadow:0 4px 12px rgba(37,99,235,0.4);
+  opacity:0; transition:all 0.3s; z-index:50;
+}
+.scroll-top.show { opacity:1; }
+.scroll-top:hover { transform:translateY(-3px); }
+
+@media (max-width:768px) {
+  .hero h1 { font-size:2rem; }
+  .grid-2, .grid-3 { grid-template-columns:1fr; }
+  .nav-links { display:none; }
+  .dev-card { flex-direction:column; text-align:center; }
+  .footer-grid { grid-template-columns:1fr; }
+}
+
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">QQ<span>KRLS</span></a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#installation">Install</a></li>
+      <li><a href="#data">Data</a></li>
+      <li><a href="#diagnostics">Diagnostics</a></li>
+      <li><a href="#krls">KRLS</a></li>
+      <li><a href="#qqkrls">QQKRLS</a></li>
+      <li><a href="#interpretation">Guide</a></li>
+      <li><a href="#references">References</a></li>
+    </ul>
+    <a href="https://pypi.org/project/qqkrls/" class="nav-badge">pip install qqkrls</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>QQKRLS</h1>
+  <p class="subtitle">Quantile-on-Quantile Kernel-Based Regularized Least Squares<br>
+  A Python library for nonparametric econometric analysis with publication-quality visualizations</p>
+  <div class="hero-badges">
+    <a href="https://pypi.org/project/qqkrls/" class="badge badge-blue">📦 PyPI v1.1.1</a>
+    <a href="https://github.com/merwanroudane/qqkrls" class="badge badge-green">⭐ GitHub</a>
+    <a href="#installation" class="badge badge-amber">🚀 Get Started</a>
+  </div>
+</div>
+
+<section class="section" id="features">
+  <h2 class="section-title"><span class="icon">✨</span> Key Features</h2>
+  <p class="section-desc">Four powerful econometric methods in one unified Python package</p>
+  <div class="feature-grid">
+    <div class="feature-card"><div class="feature-icon">🔬</div><h3>KRLS</h3><p>Kernel Regularized Least Squares — nonparametric regression with automatic bandwidth selection and LOO cross-validation</p></div>
+    <div class="feature-card"><div class="feature-icon">📊</div><h3>QQKRLS</h3><p>Quantile-on-Quantile KRLS — nonparametric marginal effects across all distributional quantile pairs with bootstrap inference</p></div>
+    <div class="feature-card"><div class="feature-icon">🎨</div><h3>Visualization Suite</h3><p>Publication-quality heatmaps, 3D surfaces, contour plots, and p-value maps with MATLAB-style aesthetics</p></div>
+    <div class="feature-card"><div class="feature-icon">📋</div><h3>LaTeX Tables</h3><p>Auto-generated LaTeX tables, descriptive statistics, and CSV export — ready for top-tier journals</p></div>
+    <div class="feature-card"><div class="feature-icon">🧪</div><h3>Diagnostics</h3><p>Full pre- and post-estimation test battery: BDS, Ramsey RESET, Breusch-Pagan, Jarque-Bera, Andrews stability</p></div>
+    <div class="feature-card"><div class="feature-icon">⚡</div><h3>Production-Ready</h3><p>Clean API, comprehensive documentation, type hints, and pip-installable from PyPI</p></div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="installation">
+  <h2 class="section-title"><span class="icon">📦</span> Installation</h2>
+  <div class="install-box">
+    <h3 style="font-size:1.3rem;">Install from PyPI</h3>
+    <code>pip install qqkrls</code>
+  </div>
+  <div style="margin-top:2rem;">
+    <div class="code-block"><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">from</span> qqkrls <span class="keyword">import</span> (
+    krls, qqkrls, predict_krls,
+    plot_qqkrls_heatmap, plot_qqkrls_3d, plot_qqkrls_contour,
+    plot_krls_derivatives, plot_krls_fit,
+    descriptive_statistics, linearity_test_battery,
+    bds_test, jarque_bera, parameter_stability_test,
+)
+<span class="comment"># Ready to go!</span></div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="data">
+  <h2 class="section-title"><span class="icon">📈</span> Dataset &amp; Descriptive Statistics</h2>
+  <p class="section-desc">Macroeconomic environmental quality analysis — 250 quarterly observations (1960–2022)</p>
+  <div class="grid-2">
+    <div class="card"><div class="card-header">📋 Dataset Overview</div><div class="card-body">
+      <div class="output-block">Dataset: Macroeconomic Environmental Quality Analysis
+═════════════════════════════════════════════════════
+  Observations : 250
+  Period       : 1960-Q1 to 2022-Q2
+  Variables    : EF, Energy, CO2, GDP
+
+  EF     — Ecological Footprint (dependent)
+  Energy — Energy Consumption (log)
+  CO2    — CO₂ Emissions (log)
+  GDP    — GDP Growth (%)</div>
+    </div></div>
+    <div class="card"><div class="card-header">📊 Summary Statistics</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Variable</th><th>Mean</th><th>Median</th><th>Std</th><th>Min</th><th>Max</th><th>Skew</th><th>Kurt</th><th>JB p</th></tr></thead>
+        <tbody>
+          <tr><td><b>EF</b></td><td>3.675</td><td>3.649</td><td>0.517</td><td>2.375</td><td>5.000</td><td>0.058</td><td>2.307</td><td>0.076*</td></tr>
+          <tr><td><b>Energy</b></td><td>8.498</td><td>8.552</td><td>0.476</td><td>6.846</td><td>9.512</td><td>-0.661</td><td>3.487</td><td class="sig">0.000***</td></tr>
+          <tr><td><b>CO₂</b></td><td>5.004</td><td>5.028</td><td>0.299</td><td>4.213</td><td>6.200</td><td>-0.095</td><td>3.493</td><td>0.234</td></tr>
+          <tr><td><b>GDP</b></td><td>2.519</td><td>2.522</td><td>1.146</td><td>-0.126</td><td>5.179</td><td>-0.101</td><td>2.328</td><td>0.077*</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="img-frame"><img src="images/nb_output_cell09_01.png" alt="Distributions"><div class="img-caption">Variable Distributions — EF, Energy, CO₂, GDP</div></div>
+    <div class="img-frame"><img src="images/nb_output_cell10_02.png" alt="Correlation"><div class="img-caption">Correlation Matrix</div></div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="diagnostics">
+  <h2 class="section-title"><span class="icon">🧪</span> Pre-Estimation Diagnostics</h2>
+  <p class="section-desc">Justification for nonparametric methods via linearity, heteroskedasticity, and independence tests</p>
+  <div class="grid-2">
+    <div class="card"><div class="card-header">🔍 Diagnostic Battery Results</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Test</th><th>Statistic</th><th>P-value</th><th>Decision</th></tr></thead>
+        <tbody>
+          <tr><td>Ramsey RESET</td><td>2.757</td><td>0.066</td><td>Nonlinear*</td></tr>
+          <tr><td>Breusch-Pagan</td><td>13.139</td><td class="sig">0.004</td><td class="sig">Heteroskedastic***</td></tr>
+          <tr><td>Jarque-Bera</td><td>5.224</td><td>0.073</td><td>Non-normal*</td></tr>
+          <tr><td>BDS (dim=2)</td><td>2.26e+08</td><td class="sig">0.000</td><td class="sig">Nonlinear dep.***</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+    <div class="card"><div class="card-header">📈 BDS Test (All Variables)</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Variable</th><th>dim=2</th><th>dim=3</th><th>dim=4</th></tr></thead>
+        <tbody>
+          <tr><td><b>EF</b></td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td></tr>
+          <tr><td><b>Energy</b></td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td></tr>
+          <tr><td><b>CO₂</b></td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td></tr>
+          <tr><td><b>GDP</b></td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td><td class="sig">p=0.000***</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="card"><div class="card-header">⚖️ Andrews Parameter Stability</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Variable</th><th>Max-F</th><th>Exp-F</th><th>Ave-F</th></tr></thead>
+        <tbody>
+          <tr><td><b>EF</b></td><td>25.345</td><td>9.712</td><td>8.601</td></tr>
+          <tr><td><b>Energy</b></td><td>253.652</td><td>121.938</td><td>94.633</td></tr>
+          <tr><td><b>CO₂</b></td><td>137.743</td><td>63.867</td><td>48.832</td></tr>
+          <tr><td><b>GDP</b></td><td>18.930</td><td>5.948</td><td>3.956</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+    <div class="card"><div class="card-header">📐 Jarque-Bera Normality</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Variable</th><th>JB Statistic</th><th>P-value</th><th>Sig.</th></tr></thead>
+        <tbody>
+          <tr><td><b>EF</b></td><td>5.143</td><td>0.076</td><td>*</td></tr>
+          <tr><td><b>Energy</b></td><td>20.665</td><td class="sig">0.000</td><td class="sig">***</td></tr>
+          <tr><td><b>CO₂</b></td><td>2.901</td><td>0.234</td><td></td></tr>
+          <tr><td><b>GDP</b></td><td>5.134</td><td>0.077</td><td>*</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="krls">
+  <h2 class="section-title"><span class="icon">🔬</span> KRLS Estimation Results</h2>
+  <p class="section-desc">Kernel Regularized Least Squares: EF = f(Energy, CO₂, GDP)</p>
+  <div class="card" style="margin-bottom:2rem;"><div class="card-header">📊 KRLS Model Summary</div><div class="card-body">
+    <div class="grid-2">
+      <div class="table-wrap"><table>
+        <thead><tr><th colspan="2">Model Parameters</th></tr></thead>
+        <tbody>
+          <tr><td>Observations (N)</td><td><b>250</b></td></tr>
+          <tr><td>Predictors (D)</td><td><b>3</b></td></tr>
+          <tr><td>Kernel</td><td><b>Gaussian</b></td></tr>
+          <tr><td>Sigma (σ)</td><td><b>3.0000</b></td></tr>
+          <tr><td>Lambda (λ)</td><td><b>1.2252</b></td></tr>
+          <tr><td>R-squared</td><td><b class="sig">0.6608</b></td></tr>
+        </tbody>
+      </table></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th colspan="2">Post-Estimation Diagnostics</th></tr></thead>
+        <tbody>
+          <tr><td>Adjusted R²</td><td><b>0.6322</b></td></tr>
+          <tr><td>AIC</td><td>146.88</td></tr>
+          <tr><td>BIC</td><td>215.12</td></tr>
+          <tr><td>Durbin-Watson</td><td>0.9503</td></tr>
+          <tr><td>MAE</td><td>0.2397</td></tr>
+          <tr><td>RMSE</td><td>0.3004</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div></div>
+  <div class="card" style="margin-bottom:2rem;"><div class="card-header">📈 Average Marginal Effects</div><div class="card-body">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Variable</th><th>Avg ME</th><th>Std Err</th><th>t-value</th><th>p-value</th><th>Sig.</th><th>Q25</th><th>Q50</th><th>Q75</th></tr></thead>
+      <tbody>
+        <tr><td><b>Energy</b></td><td>0.3771</td><td>0.0685</td><td>5.507</td><td class="sig">0.0000</td><td class="sig">***</td><td>0.157</td><td>0.378</td><td>0.617</td></tr>
+        <tr><td><b>CO₂</b></td><td>0.0490</td><td>0.1070</td><td>0.458</td><td>0.6471</td><td></td><td>-0.292</td><td>0.012</td><td>0.383</td></tr>
+        <tr><td><b>GDP</b></td><td>0.2414</td><td>0.0167</td><td>14.496</td><td class="sig">0.0000</td><td class="sig">***</td><td>0.121</td><td>0.241</td><td>0.373</td></tr>
+      </tbody>
+    </table></div>
+  </div></div>
+  <div class="grid-2">
+    <div class="img-frame"><img src="images/nb_output_cell20_03.png" alt="ME Energy"><div class="img-caption">Marginal Effect: Energy → EF</div></div>
+    <div class="img-frame"><img src="images/nb_output_cell21_04.png" alt="ME CO2"><div class="img-caption">Marginal Effect: CO₂ → EF</div></div>
+  </div>
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="img-frame"><img src="images/nb_output_cell22_05.png" alt="ME GDP"><div class="img-caption">Marginal Effect: GDP → EF</div></div>
+    <div class="img-frame"><img src="images/nb_output_cell24_07.png" alt="Fitted"><div class="img-caption">KRLS: Fitted vs Actual (R² = 0.6608)</div></div>
+  </div>
+  <div style="margin-top:2rem;">
+    <div class="img-frame"><img src="images/krls_panel_marginal_effects.png" alt="Panel"><div class="img-caption">KRLS Panel — All Marginal Effects</div></div>
+  </div>
+  <div style="margin-top:2rem;">
+    <div class="img-frame"><img src="images/nb_output_cell27_08.png" alt="Residuals"><div class="img-caption">KRLS Residual Diagnostics</div></div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="qqkrls">
+  <h2 class="section-title"><span class="icon">📊</span> QQKRLS Results</h2>
+  <p class="section-desc">Quantile-on-Quantile KRLS — nonparametric marginal effects across 19×19 quantile pairs</p>
+
+  <div class="card" style="margin-bottom:2rem;"><div class="card-header">📊 QQKRLS Summary — All Variables</div><div class="card-body">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Variable</th><th>Mean Coef</th><th>Median</th><th>Min</th><th>Max</th><th>Sig@5%</th><th>Sig@1%</th></tr></thead>
+      <tbody>
+        <tr><td><b>Energy</b></td><td>0.2212</td><td>0.0661</td><td>-0.313</td><td>1.148</td><td class="sig">164/342 (48.0%)</td><td class="sig">143/342 (41.8%)</td></tr>
+        <tr><td><b>CO₂</b></td><td>0.0918</td><td>0.0440</td><td>-0.321</td><td>1.888</td><td>109/342 (31.9%)</td><td>67/342 (19.6%)</td></tr>
+        <tr><td><b>GDP</b></td><td>0.1643</td><td>0.0945</td><td>-0.331</td><td>1.536</td><td class="sig">234/342 (68.4%)</td><td class="sig">208/342 (60.8%)</td></tr>
+      </tbody>
+    </table></div>
+  </div></div>
+
+  <h3 style="margin:2rem 0 1rem; font-size:1.4rem;">🔥 Energy → Ecological Footprint</h3>
+  <div class="grid-2">
+    <div class="img-frame"><img src="images/qqkrls_heatmap_energy.png" alt="Heatmap Energy"><div class="img-caption">QQKRLS Heatmap: Energy → EF (Paper-Style)</div></div>
+    <div class="img-frame"><img src="images/qqkrls_3d_energy.png" alt="3D Energy"><div class="img-caption">QQKRLS 3D Surface: Energy → EF</div></div>
+  </div>
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="img-frame"><img src="images/qqkrls_contour_energy.png" alt="Contour Energy"><div class="img-caption">QQKRLS Contour: Energy → EF</div></div>
+    <div class="img-frame"><img src="images/qqkrls_pvalue_energy.png" alt="P-value Energy"><div class="img-caption">QQKRLS P-Values: Energy → EF</div></div>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem; font-size:1.4rem;">🌿 CO₂ Emissions → Ecological Footprint</h3>
+  <div class="grid-2">
+    <div class="img-frame"><img src="images/qqkrls_heatmap_co2.png" alt="Heatmap CO2"><div class="img-caption">QQKRLS Heatmap: CO₂ → EF</div></div>
+    <div class="img-frame"><img src="images/qqkrls_3d_co2.png" alt="3D CO2"><div class="img-caption">QQKRLS 3D Surface: CO₂ → EF</div></div>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem; font-size:1.4rem;">💰 GDP Growth → Ecological Footprint</h3>
+  <div class="grid-2">
+    <div class="img-frame"><img src="images/qqkrls_heatmap_gdp.png" alt="Heatmap GDP"><div class="img-caption">QQKRLS Heatmap: GDP → EF</div></div>
+    <div class="img-frame"><img src="images/qqkrls_3d_gdp.png" alt="3D GDP"><div class="img-caption">QQKRLS 3D Surface: GDP → EF</div></div>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem; font-size:1.4rem;">📋 Multi-Variable Panel</h3>
+  <div class="img-frame"><img src="images/qqkrls_panel_all.png" alt="Panel All"><div class="img-caption">QQKRLS Panel — Energy, CO₂, GDP → EF</div></div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="interpretation">
+  <h2 class="section-title"><span class="icon">📖</span> Interpretation Guide</h2>
+  <p class="section-desc">How to read and interpret QQKRLS results for your research paper</p>
+  <div class="grid-2">
+    <div class="card"><div class="card-header">🗺️ Heatmap Axes</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Axis</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><b>X-axis (θ)</b></td><td>Quantile of the independent variable (0.05 – 0.95)</td></tr>
+          <tr><td><b>Y-axis (τ)</b></td><td>Quantile of the dependent variable (0.05 – 0.95)</td></tr>
+          <tr><td><b>Color</b></td><td>Marginal effect coefficient at (θ, τ)</td></tr>
+          <tr><td><b>Stars</b></td><td>*** p&lt;0.01, ** p&lt;0.05, * p&lt;0.10</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+    <div class="card"><div class="card-header">🔍 Key Patterns</div><div class="card-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Pattern</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td><b>Uniform color</b></td><td>Homogeneous effect across quantiles</td></tr>
+          <tr><td><b>Color gradient</b></td><td>Effect varies systematically</td></tr>
+          <tr><td><b>Dark corners</b></td><td>Strong effects at extremes</td></tr>
+          <tr><td><b>White band</b></td><td>No significant effect at those pairs</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+  <div class="card" style="margin-top:2rem;"><div class="card-header">🔬 Methodological Justification Workflow</div><div class="card-body">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Step</th><th>Test</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Ramsey RESET</td><td>Reject linearity → justifies KRLS over OLS</td></tr>
+        <tr><td>2</td><td>BDS</td><td>Reject i.i.d. → justifies nonparametric approach</td></tr>
+        <tr><td>3</td><td>Breusch-Pagan</td><td>Reject homoskedasticity → justifies quantile analysis</td></tr>
+        <tr><td>4</td><td>KRLS R²</td><td>Confirm good nonparametric model fit</td></tr>
+        <tr><td>5</td><td>QQKRLS heatmap</td><td>Reveal heterogeneous distributional effects</td></tr>
+      </tbody>
+    </table></div>
+  </div></div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="developer">
+  <h2 class="section-title"><span class="icon">👨‍💻</span> Developer</h2>
+  <div class="dev-card">
+    <div class="dev-avatar">MR</div>
+    <div class="dev-info">
+      <h3>Dr. Merwan Roudane</h3>
+      <p>Researcher in Econometrics &amp; Applied Statistics</p>
+      <p style="font-size:0.9rem; margin-top:4px;">📧 merwanroudane920@gmail.com</p>
+      <div class="dev-links">
+        <a href="https://github.com/merwanroudane" class="badge badge-green">GitHub</a>
+        <a href="https://pypi.org/project/qqkrls/" class="badge badge-blue">PyPI</a>
+        <a href="mailto:merwanroudane920@gmail.com" class="badge badge-amber">Contact</a>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<section class="section" id="references">
+  <h2 class="section-title"><span class="icon">📚</span> References</h2>
+  <div class="card"><div class="card-body" style="font-size:0.95rem; line-height:2;">
+    <ol>
+      <li><b>Hainmueller, J. &amp; Hazlett, C.</b> (2014). Kernel Regularized Least Squares. <i>Political Analysis</i>, 22(2), 143-168. <a href="https://doi.org/10.1093/pan/mpt024">doi:10.1093/pan/mpt024</a></li>
+      <li><b>Sim, N. &amp; Zhou, H.</b> (2015). Oil Prices, US Stock Return, and the Dependence Between Their Quantiles. <i>Journal of Banking &amp; Finance</i>, 55, 1-12. <a href="https://doi.org/10.1016/j.jbankfin.2015.01.013">doi:10.1016/j.jbankfin.2015.01.013</a></li>
+      <li><b>Adebayo, T.S., Ozkan, O. &amp; Eweade, B.S.</b> (2024). Do energy efficiency R&amp;D investments and ICT promote environmental sustainability in Sweden? <i>Journal of Cleaner Production</i>, 440, 140832. <a href="https://doi.org/10.1016/j.jclepro.2024.140832">doi:10.1016/j.jclepro.2024.140832</a></li>
+      <li><b>Adebayo, T.S., Meo, M.S., Eweade, B.S. &amp; Ozkan, O.</b> (2024). Analyzing the effects of solar energy innovations, digitalization, and economic globalization on environmental quality. <i>Clean Technologies and Environmental Policy</i>, 26, 4157-4176. <a href="https://doi.org/10.1007/s10098-024-02831-0">doi:10.1007/s10098-024-02831-0</a></li>
+    </ol>
+  </div></div>
+</section>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div><h3>qqkrls</h3><p>v1.1.1 · MIT License<br>Python ≥ 3.8</p></div>
+    <div><h3>Links</h3><p><a href="https://pypi.org/project/qqkrls/">PyPI Package</a><br><a href="https://github.com/merwanroudane/qqkrls">GitHub Repository</a><br><a href="https://github.com/merwanroudane/qqkrls/issues">Report Issues</a></p></div>
+    <div><h3>Author</h3><p>Dr. Merwan Roudane<br><a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a></p></div>
+  </div>
+  <p style="margin-top:2rem; font-size:0.85rem;">© 2024 Dr. Merwan Roudane. All rights reserved.</p>
+</footer>
+<button class="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" id="scrollTop">↑</button>
+<script>
+window.addEventListener('scroll', () => {
+  document.getElementById('scrollTop').classList.toggle('show', window.scrollY > 400);
+});
+</script>
+</body>
+</html>
